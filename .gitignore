@@ -31,3 +31,7 @@ __pycache__/
 
 # Jupyter notebook
 .ipynb_checkpoints/
+
+#nv
+.*
+!/.gitignore

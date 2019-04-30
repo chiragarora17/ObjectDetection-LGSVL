@@ -4,6 +4,7 @@ import math
 import cv2
 import os
 import errno
+from PIL import Image
 
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -12,6 +13,7 @@ IMG_PATH = u'{}/data/img'.format(BASE_PATH)
 HDF5_PATH = u'{}/data/hdf5'.format(BASE_PATH)
 MODEL_PATH = u'{}/model'.format(BASE_PATH)
 IMAGE_DIM = (320, 70)
+IMAGE_DIM_DETECT = (608, 608)
 
 
 def load_dataset(file_name):
@@ -41,13 +43,13 @@ def load_multi_dataset(txt_name):
         return data_X, data_Y
 
     return data_X, data_Y
-            
+
 
 def random_mini_batches(X, Y, mini_batch_size=64, seed=0):
     m = X.shape[0]
     mini_batches = []
     np.random.seed(seed)
-    
+
     permutation = list(np.random.permutation(m))
     shuffled_X = X[permutation,:,:,:]
     shuffled_Y = Y[permutation,:]
@@ -58,17 +60,17 @@ def random_mini_batches(X, Y, mini_batch_size=64, seed=0):
         mini_batch_Y = shuffled_Y[k * mini_batch_size : k * mini_batch_size + mini_batch_size,:]
         mini_batch = (mini_batch_X, mini_batch_Y)
         mini_batches.append(mini_batch)
-    
+
     if m % mini_batch_size != 0:
         mini_batch_X = shuffled_X[num_complete_minibatches * mini_batch_size : m,:,:,:]
         mini_batch_Y = shuffled_Y[num_complete_minibatches * mini_batch_size : m,:]
         mini_batch = (mini_batch_X, mini_batch_Y)
         mini_batches.append(mini_batch)
-    
-    return mini_batches
- 
 
-def preprocess_image(cv_img, crop=True):
+    return mini_batches
+
+
+def preprocess_image_lane(cv_img, crop=True):
     if crop:
         cv_img = cv_img[540:960, :, :]
     cv_img = cv2.resize(cv_img, IMAGE_DIM, interpolation=cv2.INTER_AREA)
@@ -76,6 +78,18 @@ def preprocess_image(cv_img, crop=True):
     # cv_img = cv_img / 255. - 0.5
 
     return cv_img
+
+def preprocess_image_object(cv_img, model_image_size):
+	print(type(model_image_size))
+	print(type(cv_img))
+	resized_image = cv_img.resize(tuple(reversed(model_image_size)), Image.BICUBIC)
+	image_data = np.array(resized_image, dtype='float32')
+	image_data /= 255.
+	image_data = np.expand_dims(image_data, 0) # Add batch dimension.
+    # cv_img = cv2.resize(cv_img, IMAGE_DIM_DETECT, interpolation=cv2.INTER_AREA)
+    # cv_img = cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+    # cv_img = cv_img / 255. - 0.5
+	return cv_img, image_data
 
 
 def mkdir_p(path):
